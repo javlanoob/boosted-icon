@@ -58,6 +58,11 @@ public class BoostIconOverlay extends Overlay
 	 */
 	private final Map<Integer, BufferedImage> icons = new HashMap<>();
 
+	/**
+	 * The height those were prepared at, since a change to the size setting makes them all over again.
+	 */
+	private int iconHeight;
+
 	@Inject
 	BoostIconOverlay(Client client, SpriteManager spriteManager, BoostIconConfig config, BoostIconPlugin plugin)
 	{
@@ -85,15 +90,18 @@ public class BoostIconOverlay extends Overlay
 		Font font = graphics.getFont();
 		graphics.setFont(font.deriveFont(font.getStyle(), font.getSize() + size));
 
+		// Three at the least, since the outline takes a pixel at the top and another at the bottom
+		int height = Math.max(3, BASE_HEIGHT + size);
+
 		for (StatColumn column : columns)
 		{
-			drawColumn(graphics, column, size, right);
+			drawColumn(graphics, column, size, height, right);
 		}
 
 		return null;
 	}
 
-	private void drawColumn(Graphics2D graphics, StatColumn column, int size, boolean right)
+	private void drawColumn(Graphics2D graphics, StatColumn column, int size, int height, boolean right)
 	{
 		Player player = column.getPlayer();
 		LocalPoint location = player.getLocalLocation();
@@ -109,7 +117,7 @@ public class BoostIconOverlay extends Overlay
 		int adjustIcon = 5 - config.drop();
 		for (StatChange change : column.getChanges())
 		{
-			BufferedImage icon = icon(change.getStat());
+			BufferedImage icon = icon(change.getStat(), height);
 			if (icon == null)
 			{
 				continue;
@@ -126,18 +134,13 @@ public class BoostIconOverlay extends Overlay
 				return;
 			}
 
-			// The skill icons are not all the same shape, so the size goes on the height and the width
-			// follows it, rather than squaring everything off
-			int height = Math.max(1, BASE_HEIGHT + size);
-			int width = Math.max(1, Math.round(icon.getWidth() * height / (float) icon.getHeight()));
 			int top = canvasPoint.getY() - adjustIcon;
 
+			// Already the size it is drawn at, so nothing is scaled here
 			graphics.drawImage(
 				icon,
 				canvasPoint.getX() + (right ? ICON_OFFSET : -ICON_OFFSET),
 				top,
-				width,
-				height,
 				null);
 
 			String label = label(change);
@@ -147,11 +150,11 @@ public class BoostIconOverlay extends Overlay
 				text.setColor(color(change));
 				text.setPosition(
 					canvasPoint.getX() + size + (right ? TEXT_OFFSET : -TEXT_OFFSET),
-					top + (height + graphics.getFontMetrics().getAscent()) / 2);
+					top + (icon.getHeight() + graphics.getFontMetrics().getAscent()) / 2);
 				text.render(graphics);
 			}
 
-			adjustIcon += height;
+			adjustIcon += icon.getHeight();
 		}
 	}
 
@@ -176,28 +179,52 @@ public class BoostIconOverlay extends Overlay
 	 * A skill's icon with a black outline around it, which is what keeps it off whatever is behind it.
 	 * The outline has to go somewhere, so the sprite is given a pixel of room on each side for it first.
 	 */
-	private BufferedImage icon(CombatStat stat)
+	private BufferedImage icon(CombatStat stat, int height)
 	{
-		BufferedImage outlined = icons.get(stat.getSpriteId());
-
-		if (outlined != null)
+		if (height != iconHeight)
 		{
-			return outlined;
+			icons.clear();
+			iconHeight = height;
+		}
+
+		BufferedImage icon = icons.get(stat.getSpriteId());
+
+		if (icon != null)
+		{
+			return icon;
 		}
 
 		BufferedImage sprite = spriteManager.getSprite(stat.getSpriteId(), 0);
 
 		if (sprite == null || sprite.getWidth() < 1 || sprite.getHeight() < 1)
 		{
-			// Still being loaded, so there is nothing to outline yet
+			// Still being loaded, so there is nothing to prepare yet
 			return null;
 		}
 
-		outlined = outlined(sprite);
+		// Scaled before it is outlined, so the outline is a pixel wide at the size it ends up drawn at
+		icon = outlined(scaled(sprite, height - 2));
 
-		icons.put(stat.getSpriteId(), outlined);
+		icons.put(stat.getSpriteId(), icon);
 
-		return outlined;
+		return icon;
+	}
+
+	/**
+	 * The sprite at the height the icons are drawn at, keeping its shape. Drawing a scaled image leaves
+	 * it to whatever the graphics is set to, which is nearest neighbour and drops pixels unevenly out of
+	 * artwork this small, so it is scaled here instead: smoothly, and once rather than every frame.
+	 */
+	private static BufferedImage scaled(BufferedImage sprite, int height)
+	{
+		if (height == sprite.getHeight())
+		{
+			return sprite;
+		}
+
+		int width = Math.max(1, Math.round(sprite.getWidth() * height / (float) sprite.getHeight()));
+
+		return ImageUtil.resizeImage(sprite, width, height);
 	}
 
 	/**
