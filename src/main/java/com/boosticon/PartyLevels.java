@@ -13,7 +13,7 @@ class PartyLevels
 	 */
 	static final int UNKNOWN = -1;
 
-	private static final int SIZE = CombatStat.values().length;
+	private static final int SIZE = CombatStat.ALL.length;
 
 	private final int[] boosted = new int[SIZE];
 	private final int[] real = new int[SIZE];

@@ -32,6 +32,12 @@ class PartyPanelStats
 	private Class<?> message;
 	private EventBus.Subscriber subscriber;
 
+	/**
+	 * Where the party connection keeps the message types it has been told about. Found the once, since
+	 * the list behind it is read every tick and finding a field costs more than reading one.
+	 */
+	private Field messages;
+
 	@Inject
 	PartyPanelStats(EventBus eventBus, WSClient wsClient, BoostIconPlugin plugin)
 	{
@@ -137,7 +143,12 @@ class PartyPanelStats
 	{
 		try
 		{
-			Object registered = read(wsClient, WSClient.class, MESSAGES);
+			if (messages == null)
+			{
+				messages = field(WSClient.class, MESSAGES);
+			}
+
+			Object registered = messages.get(wsClient);
 
 			return registered instanceof Collection ? messageIn((Collection<?>) registered) : null;
 		}
@@ -168,12 +179,7 @@ class PartyPanelStats
 
 	private static Object read(Object owner, String name) throws ReflectiveOperationException
 	{
-		return read(owner, owner.getClass(), name);
-	}
-
-	private static Object read(Object owner, Class<?> type, String name) throws ReflectiveOperationException
-	{
-		return field(type, name).get(owner);
+		return field(owner.getClass(), name).get(owner);
 	}
 
 	private static int readInt(Object owner, String name) throws ReflectiveOperationException

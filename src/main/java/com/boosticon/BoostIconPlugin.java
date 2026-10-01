@@ -3,7 +3,6 @@ package com.boosticon;
 import com.google.inject.Provides;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -39,7 +38,7 @@ import net.runelite.client.util.Text;
 )
 public class BoostIconPlugin extends Plugin
 {
-	private static final CombatStat[] STATS = CombatStat.values();
+	private static final CombatStat[] STATS = CombatStat.ALL;
 
 	@Inject
 	private Client client;
@@ -86,6 +85,13 @@ public class BoostIconPlugin extends Plugin
 	private final List<StatColumn> columns = new ArrayList<>();
 
 	/**
+	 * The settings as they stand, read in one go rather than one at a time while drawing. Replaced rather
+	 * than changed when one of them changes, so that whichever thread is reading a set has the whole of
+	 * it as it was at one moment.
+	 */
+	private volatile Settings settings;
+
+	/**
 	 * The levels each party member has shared, held until they share different ones or leave.
 	 */
 	private final Map<Long, PartyLevels> partyLevels = new HashMap<>();
@@ -99,6 +105,7 @@ public class BoostIconPlugin extends Plugin
 	@Override
 	protected void startUp()
 	{
+		settings = new Settings(config);
 		overlayManager.add(overlay);
 		keyManager.registerKeyListener(toggle);
 		wsClient.registerMessage(BoostIconStats.class);
@@ -133,11 +140,21 @@ public class BoostIconPlugin extends Plugin
 	}
 
 	/**
-	 * The icons to draw this tick, read by the overlay on the same thread that fills them in.
+	 * The icons to draw this tick. The overlay reads this on the same thread that fills it in, and is
+	 * handed the list itself rather than a wrapper around it, which would be an object made for every
+	 * frame to hold something that is only ever read.
 	 */
 	List<StatColumn> getColumns()
 	{
-		return Collections.unmodifiableList(columns);
+		return columns;
+	}
+
+	/**
+	 * The settings as they stand, for the overlay to draw a whole frame by.
+	 */
+	Settings getSettings()
+	{
+		return settings;
 	}
 
 	/**
@@ -148,6 +165,8 @@ public class BoostIconPlugin extends Plugin
 	@Subscribe
 	public void onGameTick(GameTick event)
 	{
+		Settings settings = this.settings;
+
 		columns.clear();
 
 		int[] boosted = new int[STATS.length];
@@ -159,21 +178,29 @@ public class BoostIconPlugin extends Plugin
 			real[i] = full(STATS[i]);
 		}
 
-		if (config.showSelf())
+		if (settings.showSelf())
 		{
-			addColumn(client.getLocalPlayer(), boosted, real);
+			addColumn(settings, client.getLocalPlayer(), boosted, real);
 		}
 
-		partyPanelStats.listen(config.partyStats());
-		share(boosted, real);
+		partyPanelStats.listen(settings.partyStats());
+		share(settings, boosted, real);
 
-		if (!config.partyStats() || !partyService.isInParty())
+		if (!settings.partyStats() || !partyService.isInParty())
 		{
 			partyLevels.clear();
 			return;
 		}
 
+		if (partyLevels.isEmpty())
+		{
+			// Nobody has shared anything, so there is nobody to go looking for among the players around
+			return;
+		}
+
+		Map<String, Player> nearby = playersByName();
 		PartyMember local = partyService.getLocalMember();
+
 		for (PartyMember member : partyService.getMembers())
 		{
 			if (local != null && member.getMemberId() == local.getMemberId())
@@ -182,12 +209,14 @@ public class BoostIconPlugin extends Plugin
 			}
 
 			PartyLevels levels = partyLevels.get(member.getMemberId());
-			if (levels == null)
+			String name = member.getDisplayName();
+
+			if (levels == null || name == null)
 			{
 				continue;
 			}
 
-			addColumn(playerNamed(member.getDisplayName()), levels.getBoosted(), levels.getReal());
+			addColumn(settings, nearby.get(Text.standardize(name)), levels.getBoosted(), levels.getReal());
 		}
 	}
 
@@ -219,7 +248,15 @@ public class BoostIconPlugin extends Plugin
 	@Subscribe
 	public void onConfigChanged(ConfigChanged event)
 	{
-		if (BoostIconConfig.GROUP.equals(event.getGroup()) && "partyStats".equals(event.getKey()))
+		if (!BoostIconConfig.GROUP.equals(event.getGroup()))
+		{
+			return;
+		}
+
+		// Read again here rather than while drawing, so that a change shows on the next frame either way
+		settings = new Settings(config);
+
+		if ("partyStats".equals(event.getKey()))
 		{
 			requestSync();
 		}
@@ -281,7 +318,7 @@ public class BoostIconPlugin extends Plugin
 	{
 		PartyMember local = partyService.getLocalMember();
 
-		if (!stat.isPossible(level) || !stat.isPossible(boostedLevel) || !config.partyStats()
+		if (!stat.isPossible(level) || !stat.isPossible(boostedLevel) || !settings.partyStats()
 			|| (local != null && local.getMemberId() == memberId))
 		{
 			return;
@@ -297,7 +334,7 @@ public class BoostIconPlugin extends Plugin
 	 */
 	void requestSync()
 	{
-		if (config.partyStats() && partyService.isInParty())
+		if (settings.partyStats() && partyService.isInParty())
 		{
 			partyService.send(new UserSync());
 		}
@@ -322,14 +359,14 @@ public class BoostIconPlugin extends Plugin
 		return stat.isPercent() ? CombatStat.FULL_PERCENT : client.getRealSkillLevel(stat.getSkill());
 	}
 
-	private void addColumn(Player player, int[] boosted, int[] real)
+	private void addColumn(Settings settings, Player player, int[] boosted, int[] real)
 	{
 		if (player == null || player.getLocalLocation() == null)
 		{
 			return;
 		}
 
-		List<StatChange> changes = new ArrayList<>();
+		List<StatChange> changes = null;
 
 		for (int i = 0; i < STATS.length; i++)
 		{
@@ -340,7 +377,7 @@ public class BoostIconPlugin extends Plugin
 				continue;
 			}
 
-			if (!stat.isEnabled(config))
+			if (!settings.isEnabled(i))
 			{
 				continue;
 			}
@@ -350,25 +387,32 @@ public class BoostIconPlugin extends Plugin
 			// Hitpoints, prayer and special attack are an amount rather than a boost or a drain, so
 			// having turned one on is asking to see it, full bar and all
 			if (!stat.isPoints()
-				&& ((change == 0 && !config.showUnchanged())
-				|| (change > 0 && !config.showBuffs())
-				|| (change < 0 && !config.showDebuffs())))
+				&& ((change == 0 && !settings.showUnchanged())
+				|| (change > 0 && !settings.showBuffs())
+				|| (change < 0 && !settings.showDebuffs())))
 			{
 				continue;
+			}
+
+			if (changes == null)
+			{
+				// Left until there is something to put in it, since most ticks of most players have
+				// nothing off its level at all
+				changes = new ArrayList<>(STATS.length);
 			}
 
 			changes.add(new StatChange(stat, boosted[i], change));
 		}
 
-		if (!changes.isEmpty())
+		if (changes != null)
 		{
 			columns.add(new StatColumn(player, changes));
 		}
 	}
 
-	private void share(int[] boosted, int[] real)
+	private void share(Settings settings, int[] boosted, int[] real)
 	{
-		if (!config.partyStats() || !partyService.isInParty())
+		if (!settings.partyStats() || !partyService.isInParty())
 		{
 			forgetSent();
 			return;
@@ -390,24 +434,25 @@ public class BoostIconPlugin extends Plugin
 		sentReal = null;
 	}
 
-	private Player playerNamed(String name)
+	/**
+	 * The players around you, by the name the party knows them as. Built once a tick rather than looked
+	 * through again for each party member, since a busy world is a great many names to go over.
+	 */
+	private Map<String, Player> playersByName()
 	{
-		if (name == null)
-		{
-			return null;
-		}
-
-		String wanted = Text.standardize(name);
+		Map<String, Player> players = new HashMap<>();
 
 		for (Player player : client.getTopLevelWorldView().players())
 		{
-			String other = player.getName();
-			if (other != null && Text.standardize(other).equals(wanted))
+			String name = player.getName();
+
+			if (name != null)
 			{
-				return player;
+				// The first of them, as a name is only shared by a player and whatever is mimicking them
+				players.putIfAbsent(Text.standardize(name), player);
 			}
 		}
 
-		return null;
+		return players;
 	}
 }
