@@ -99,6 +99,17 @@ public interface BoostIconConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = "partyStats",
+		name = "Party stats",
+		description = "Show your party's boosted and drained stats over their heads, and share yours with them.",
+		position = 8
+	)
+	default boolean partyStats()
+	{
+		return false;
+	}
+
+	@ConfigItem(
 		keyName = "showAttack",
 		name = "Attack",
 		description = "Show an icon when Attack is boosted or drained.",

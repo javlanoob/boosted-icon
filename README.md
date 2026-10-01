@@ -22,6 +22,11 @@ an icon.
 
 **Boost colour** and **Drain colour**: the colour of the number.
 
+**Party stats**: with this on, the same icons appear over the heads of the party members around you,
+and your own stats are shared with the party. Only members who also have the setting on send anything,
+and levels are sent rather than the boosts worked out from them, so your own settings below decide what
+you see of theirs.
+
 ### Stats
 Every combat stat can be turned on or off on its own. Attack, Strength, Defence, Ranged and Magic are
 on; Prayer and Hitpoints are off, since their points are already on the orbs and would otherwise sit

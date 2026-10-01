@@ -11,6 +11,7 @@ import net.runelite.api.Client;
 import net.runelite.api.Perspective;
 import net.runelite.api.Player;
 import net.runelite.api.Point;
+import net.runelite.api.coords.LocalPoint;
 import net.runelite.client.game.SpriteManager;
 import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayLayer;
@@ -50,10 +51,9 @@ public class BoostIconOverlay extends Overlay
 	@Override
 	public Dimension render(Graphics2D graphics)
 	{
-		List<StatChange> changes = plugin.getChanges();
-		Player player = client.getLocalPlayer();
+		List<StatColumn> columns = plugin.getColumns();
 
-		if (changes.isEmpty() || player == null || player.getLocalLocation() == null)
+		if (columns.isEmpty())
 		{
 			return null;
 		}
@@ -63,8 +63,26 @@ public class BoostIconOverlay extends Overlay
 		Font font = graphics.getFont();
 		graphics.setFont(font.deriveFont(font.getStyle(), font.getSize() + size));
 
+		for (StatColumn column : columns)
+		{
+			drawColumn(graphics, column, size, right);
+		}
+
+		return null;
+	}
+
+	private void drawColumn(Graphics2D graphics, StatColumn column, int size, boolean right)
+	{
+		Player player = column.getPlayer();
+		LocalPoint location = player.getLocalLocation();
+
+		if (location == null)
+		{
+			return;
+		}
+
 		int adjustIcon = 5;
-		for (StatChange change : changes)
+		for (StatChange change : column.getChanges())
 		{
 			BufferedImage icon = spriteManager.getSprite(change.getStat().getSpriteId(), 0);
 			if (icon == null)
@@ -74,13 +92,13 @@ public class BoostIconOverlay extends Overlay
 
 			Point canvasPoint = Perspective.getCanvasImageLocation(
 				client,
-				player.getLocalLocation(),
+				location,
 				icon,
 				player.getLogicalHeight());
 
 			if (canvasPoint == null)
 			{
-				return null;
+				return;
 			}
 
 			graphics.drawImage(
@@ -104,8 +122,6 @@ public class BoostIconOverlay extends Overlay
 
 			adjustIcon += size + BASE_SIZE;
 		}
-
-		return null;
 	}
 
 	private String text(StatChange change)
