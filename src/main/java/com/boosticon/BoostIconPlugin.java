@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import javax.inject.Inject;
 import net.runelite.api.Client;
+import net.runelite.api.Experience;
 import net.runelite.api.GameState;
 import net.runelite.api.Player;
 import net.runelite.api.events.GameStateChanged;
@@ -16,6 +17,8 @@ import net.runelite.api.events.GameTick;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
+import net.runelite.client.events.ConfigChanged;
+import net.runelite.client.events.PartyChanged;
 import net.runelite.client.party.PartyMember;
 import net.runelite.client.party.PartyService;
 import net.runelite.client.party.WSClient;
@@ -56,12 +59,15 @@ public class BoostIconPlugin extends Plugin
 	@Inject
 	private WSClient wsClient;
 
+	@Inject
+	private PartyPanelStats partyPanelStats;
+
 	private final List<StatColumn> columns = new ArrayList<>();
 
 	/**
-	 * The last levels each party member sent, held until they send different ones or leave.
+	 * The levels each party member has shared, held until they share different ones or leave.
 	 */
-	private final Map<Long, StatsUpdate> partyStats = new HashMap<>();
+	private final Map<Long, PartyLevels> partyLevels = new HashMap<>();
 
 	/**
 	 * The levels last sent to the party, so a tick that changed nothing sends nothing.
@@ -73,16 +79,17 @@ public class BoostIconPlugin extends Plugin
 	protected void startUp()
 	{
 		overlayManager.add(overlay);
-		wsClient.registerMessage(StatsUpdate.class);
+		wsClient.registerMessage(BoostIconStats.class);
 	}
 
 	@Override
 	protected void shutDown()
 	{
 		overlayManager.remove(overlay);
-		wsClient.unregisterMessage(StatsUpdate.class);
+		wsClient.unregisterMessage(BoostIconStats.class);
+		partyPanelStats.stop();
 		columns.clear();
-		partyStats.clear();
+		partyLevels.clear();
 		forgetSent();
 	}
 
@@ -120,11 +127,13 @@ public class BoostIconPlugin extends Plugin
 		}
 
 		addColumn(client.getLocalPlayer(), boosted, real);
+
+		partyPanelStats.listen(config.partyStats());
 		share(boosted, real);
 
 		if (!config.partyStats() || !partyService.isInParty())
 		{
-			partyStats.clear();
+			partyLevels.clear();
 			return;
 		}
 
@@ -136,13 +145,13 @@ public class BoostIconPlugin extends Plugin
 				continue;
 			}
 
-			StatsUpdate stats = partyStats.get(member.getMemberId());
-			if (stats == null)
+			PartyLevels levels = partyLevels.get(member.getMemberId());
+			if (levels == null)
 			{
 				continue;
 			}
 
-			addColumn(playerNamed(member.getDisplayName()), stats.getBoosted(), stats.getReal());
+			addColumn(playerNamed(member.getDisplayName()), levels.getBoosted(), levels.getReal());
 		}
 	}
 
@@ -156,22 +165,52 @@ public class BoostIconPlugin extends Plugin
 		}
 	}
 
+	/**
+	 * Levels belong to the party they were shared with, and a different party is different people.
+	 */
 	@Subscribe
-	public void onStatsUpdate(StatsUpdate message)
+	public void onPartyChanged(PartyChanged event)
 	{
-		PartyMember local = partyService.getLocalMember();
-		if (local != null && local.getMemberId() == message.getMemberId())
+		clientThread.invoke(() ->
+		{
+			partyLevels.clear();
+			forgetSent();
+		});
+
+		requestSync();
+	}
+
+	@Subscribe
+	public void onConfigChanged(ConfigChanged event)
+	{
+		if (BoostIconConfig.GROUP.equals(event.getGroup()) && "partyStats".equals(event.getKey()))
+		{
+			requestSync();
+		}
+	}
+
+	@Subscribe
+	public void onBoostIconStats(BoostIconStats message)
+	{
+		int[] boosted = message.getBoosted();
+		int[] real = message.getReal();
+
+		if (boosted == null || real == null
+			|| boosted.length != STATS.length || real.length != STATS.length)
 		{
 			return;
 		}
 
-		clientThread.invoke(() -> partyStats.put(message.getMemberId(), message));
+		for (int i = 0; i < STATS.length; i++)
+		{
+			record(message.getMemberId(), STATS[i].getSkill().ordinal(), real[i], boosted[i]);
+		}
 	}
 
 	@Subscribe
 	public void onUserPart(UserPart event)
 	{
-		clientThread.invoke(() -> partyStats.remove(event.getMemberId()));
+		clientThread.invoke(() -> partyLevels.remove(event.getMemberId()));
 	}
 
 	/**
@@ -183,11 +222,43 @@ public class BoostIconPlugin extends Plugin
 		clientThread.invoke(this::forgetSent);
 	}
 
+	/**
+	 * One stat of one party member, however it reached us. Levels come from whoever is sharing them and
+	 * are taken as nothing more than numbers: a stat with no icon here is dropped, and a level past 99
+	 * is a virtual level, which is a level in name only and not something a stat can be boosted above.
+	 */
+	void record(long memberId, int skillOrdinal, int level, int boostedLevel)
+	{
+		CombatStat stat = CombatStat.ofSkill(skillOrdinal);
+		PartyMember local = partyService.getLocalMember();
+
+		if (stat == null || level < 1 || boostedLevel < 1 || !config.partyStats()
+			|| (local != null && local.getMemberId() == memberId))
+		{
+			return;
+		}
+
+		int real = Math.min(level, Experience.MAX_REAL_LEVEL);
+
+		clientThread.invoke(() -> partyLevels
+			.computeIfAbsent(memberId, id -> new PartyLevels())
+			.set(stat, boostedLevel, real));
+	}
+
+	/**
+	 * Asks the party for the levels it has now, rather than waiting on everyone's next change.
+	 */
+	void requestSync()
+	{
+		if (config.partyStats() && partyService.isInParty())
+		{
+			partyService.send(new UserSync());
+		}
+	}
+
 	private void addColumn(Player player, int[] boosted, int[] real)
 	{
-		if (player == null || player.getLocalLocation() == null
-			|| boosted == null || real == null
-			|| boosted.length != STATS.length || real.length != STATS.length)
+		if (player == null || player.getLocalLocation() == null)
 		{
 			return;
 		}
@@ -197,6 +268,12 @@ public class BoostIconPlugin extends Plugin
 		for (int i = 0; i < STATS.length; i++)
 		{
 			CombatStat stat = STATS[i];
+
+			if (boosted[i] == PartyLevels.UNKNOWN || real[i] == PartyLevels.UNKNOWN)
+			{
+				continue;
+			}
+
 			int change = boosted[i] - real[i];
 
 			if (!stat.isEnabled(config) || change == 0
@@ -230,7 +307,7 @@ public class BoostIconPlugin extends Plugin
 
 		sentBoosted = boosted.clone();
 		sentReal = real.clone();
-		partyService.send(new StatsUpdate(sentBoosted, sentReal));
+		partyService.send(new BoostIconStats(sentBoosted, sentReal));
 	}
 
 	private void forgetSent()

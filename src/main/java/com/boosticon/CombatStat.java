@@ -43,4 +43,22 @@ enum CombatStat
 	{
 		return enabled.test(config);
 	}
+
+	/**
+	 * The stat a {@link Skill} ordinal stands for, or nothing where it is a skill with no bearing on
+	 * combat, or no skill at all. Ordinals arrive from other players, so the skill itself is never
+	 * looked up by one.
+	 */
+	static CombatStat ofSkill(int skillOrdinal)
+	{
+		for (CombatStat stat : values())
+		{
+			if (stat.skill.ordinal() == skillOrdinal)
+			{
+				return stat;
+			}
+		}
+
+		return null;
+	}
 }

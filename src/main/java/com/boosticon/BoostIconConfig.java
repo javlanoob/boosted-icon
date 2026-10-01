@@ -8,9 +8,11 @@ import net.runelite.client.config.ConfigItem;
 import net.runelite.client.config.ConfigSection;
 import net.runelite.client.config.Range;
 
-@ConfigGroup("boostIconPlugin")
+@ConfigGroup(BoostIconConfig.GROUP)
 public interface BoostIconConfig extends Config
 {
+	String GROUP = "boostIconPlugin";
+
 	@ConfigSection(
 		name = "Stats",
 		description = "Which combat stats get an icon.",
@@ -101,7 +103,7 @@ public interface BoostIconConfig extends Config
 	@ConfigItem(
 		keyName = "partyStats",
 		name = "Party stats",
-		description = "Show your party's boosted and drained stats over their heads, and share yours with them.",
+		description = "Show your party's boosted and drained stats over their heads. Team mates already sharing their stats with the party, as Party Panel does, need nothing else.",
 		position = 8
 	)
 	default boolean partyStats()
