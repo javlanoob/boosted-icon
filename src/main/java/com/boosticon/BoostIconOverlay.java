@@ -159,6 +159,29 @@ public class BoostIconOverlay extends Overlay
 	}
 
 	/**
+	 * Hitpoints and prayer are coloured by how much of them is left rather than by which way they are
+	 * off the full amount, so that a brew reads as plenty and a long fight reads as trouble.
+	 */
+	private Color pointsColor(StatChange stat)
+	{
+		int full = stat.getRealLevel();
+
+		if (full < 1)
+		{
+			return config.buffColor();
+		}
+
+		int left = stat.getLevel() * 100 / full;
+
+		if (left < config.criticalPoints())
+		{
+			return config.debuffColor();
+		}
+
+		return left < config.lowPoints() ? config.expiringColor() : config.buffColor();
+	}
+
+	/**
 	 * How far up the player the column is measured from, which is as tall as the player for the health
 	 * bar it normally sits by, and nothing at all for the tile they are standing on.
 	 */
@@ -292,6 +315,12 @@ public class BoostIconOverlay extends Overlay
 
 	private String label(StatChange change)
 	{
+		if (change.getStat().isPoints() && config.statText() != StatText.NONE)
+		{
+			// What is left of them is the news, rather than how far off the full amount that is
+			return String.valueOf(change.getLevel());
+		}
+
 		switch (config.statText())
 		{
 			case CHANGE:
@@ -309,6 +338,11 @@ public class BoostIconOverlay extends Overlay
 	 */
 	private Color color(StatChange stat)
 	{
+		if (stat.getStat().isPoints())
+		{
+			return pointsColor(stat);
+		}
+
 		int change = stat.getChange();
 
 		if (change < 0)

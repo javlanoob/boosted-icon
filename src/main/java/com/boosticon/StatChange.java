@@ -36,4 +36,12 @@ class StatChange
 	{
 		return change;
 	}
+
+	/**
+	 * The level with nothing acting on it, which for hitpoints and prayer is the full amount of them.
+	 */
+	int getRealLevel()
+	{
+		return level - change;
+	}
 }

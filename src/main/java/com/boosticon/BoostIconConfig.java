@@ -69,7 +69,7 @@ public interface BoostIconConfig extends Config
 	@ConfigItem(
 		keyName = "statText",
 		name = "Show",
-		description = "What to write next to each icon.",
+		description = "What to write next to each icon. Hitpoints and prayer always read as how much is left.",
 		position = 5
 	)
 	default StatText statText()
@@ -147,11 +147,35 @@ public interface BoostIconConfig extends Config
 		return 3;
 	}
 
+	@Range(max = 100)
+	@ConfigItem(
+		keyName = "lowPoints",
+		name = "Low points",
+		description = "Hitpoints and prayer below this much of the full amount turn the running out colour.",
+		position = 12
+	)
+	default int lowPoints()
+	{
+		return 60;
+	}
+
+	@Range(max = 100)
+	@ConfigItem(
+		keyName = "criticalPoints",
+		name = "Critical points",
+		description = "Hitpoints and prayer below this much of the full amount turn the debuff colour.",
+		position = 13
+	)
+	default int criticalPoints()
+	{
+		return 35;
+	}
+
 	@ConfigItem(
 		keyName = "showSelf",
 		name = "Show on yourself",
 		description = "Show your own boosted and drained stats over your head.",
-		position = 12
+		position = 14
 	)
 	default boolean showSelf()
 	{
@@ -162,7 +186,7 @@ public interface BoostIconConfig extends Config
 		keyName = "partyStats",
 		name = "Party stats",
 		description = "Show your party's boosted and drained stats over their heads. Team mates already sharing their stats with the party, as Party Panel does, need nothing else.",
-		position = 13
+		position = 15
 	)
 	default boolean partyStats()
 	{

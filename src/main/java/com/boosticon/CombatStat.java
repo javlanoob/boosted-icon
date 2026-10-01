@@ -45,6 +45,16 @@ enum CombatStat
 	}
 
 	/**
+	 * Whether the stat is points that run down and get topped up again rather than a level that sits
+	 * where it is until something acts on it. How much of these is left matters more than how far they
+	 * are from the level, so they are read and coloured that way.
+	 */
+	boolean isPoints()
+	{
+		return this == HITPOINTS || this == PRAYER;
+	}
+
+	/**
 	 * The stat a {@link Skill} ordinal stands for, or nothing where it is a skill with no bearing on
 	 * combat, or no skill at all. Ordinals arrive from other players, so the skill itself is never
 	 * looked up by one.

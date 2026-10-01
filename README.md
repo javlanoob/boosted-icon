@@ -21,7 +21,7 @@ middle, or the tile they are standing on. **Lower by** then moves them from ther
 **Icon position**: which side of the health bar the icons appear on.
 
 **Show**: what goes next to each icon — the change (`+5`, `-3`), the level the stat is at now, or
-nothing.
+nothing. Hitpoints and prayer ignore this and always read as how much is left.
 
 **Show buffs** and **Show debuffs**: whether stats above their level, below their level, or both get
 an icon.
@@ -31,6 +31,9 @@ are the ones the game's own Boosts plugin uses, so a stat reads the same in both
 
 **Buff threshold**: how many levels a buff has left for it to count as running out and turn the colour
 above. 0 never does.
+
+**Low points** and **Critical points**: the share of your hitpoints or prayer left at which the number
+turns the running out colour, and then the debuff colour. 60 and 35 to start with.
 
 **Show on yourself**: whether your own stats get icons. Off with **Party stats** on leaves only your
 team mates'.
@@ -47,5 +50,10 @@ it with the setting on will show up as well.
 
 ### Stats
 Every combat stat can be turned on or off on its own. Attack, Strength, Defence, Ranged and Magic are
-on; Prayer and Hitpoints are off, since their points are already on the orbs and would otherwise sit
-there in red for most of a trip. Turn them on if you want brews and overloads shown too.
+on; Prayer and Hitpoints are off, since their points are already on the orbs.
+
+Those two are read differently when you do turn them on. A level that is off where it should be is news
+in itself, but hitpoints and prayer run down all trip, so what is left of them is the news instead: the
+number is always the points you have, and its colour comes from how much of the full amount that is
+rather than from which way it is off. They still only appear while off the full amount, so nothing sits
+over your head at full.
