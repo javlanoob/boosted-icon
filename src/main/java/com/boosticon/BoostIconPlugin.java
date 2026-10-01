@@ -20,6 +20,7 @@ import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.events.PartyChanged;
+import net.runelite.client.input.KeyManager;
 import net.runelite.client.party.PartyMember;
 import net.runelite.client.party.PartyService;
 import net.runelite.client.party.WSClient;
@@ -28,6 +29,7 @@ import net.runelite.client.party.messages.UserSync;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.overlay.OverlayManager;
+import net.runelite.client.util.HotkeyListener;
 import net.runelite.client.util.Text;
 
 @PluginDescriptor(
@@ -63,6 +65,24 @@ public class BoostIconPlugin extends Plugin
 	@Inject
 	private PartyPanelStats partyPanelStats;
 
+	@Inject
+	private KeyManager keyManager;
+
+	/**
+	 * Whether the key has been used to put the icons away. Set from the keyboard and read while the
+	 * overlay is drawn, which are not the same thread.
+	 */
+	private volatile boolean hidden;
+
+	private final HotkeyListener toggle = new HotkeyListener(() -> config.toggle())
+	{
+		@Override
+		public void hotkeyPressed()
+		{
+			hidden = !hidden;
+		}
+	};
+
 	private final List<StatColumn> columns = new ArrayList<>();
 
 	/**
@@ -80,6 +100,7 @@ public class BoostIconPlugin extends Plugin
 	protected void startUp()
 	{
 		overlayManager.add(overlay);
+		keyManager.registerKeyListener(toggle);
 		wsClient.registerMessage(BoostIconStats.class);
 	}
 
@@ -87,6 +108,8 @@ public class BoostIconPlugin extends Plugin
 	protected void shutDown()
 	{
 		overlayManager.remove(overlay);
+		keyManager.unregisterKeyListener(toggle);
+		hidden = false;
 		wsClient.unregisterMessage(BoostIconStats.class);
 		partyPanelStats.stop();
 		columns.clear();
@@ -98,6 +121,15 @@ public class BoostIconPlugin extends Plugin
 	BoostIconConfig provideConfig(ConfigManager configManager)
 	{
 		return configManager.getConfig(BoostIconConfig.class);
+	}
+
+	/**
+	 * Whether the icons have been put away with the toggle key, which stops them being drawn and
+	 * nothing else: levels are still kept up to date and still shared with the party.
+	 */
+	boolean isHidden()
+	{
+		return hidden;
 	}
 
 	/**
@@ -308,11 +340,19 @@ public class BoostIconPlugin extends Plugin
 				continue;
 			}
 
+			if (!stat.isEnabled(config))
+			{
+				continue;
+			}
+
 			int change = boosted[i] - real[i];
 
-			if (!stat.isEnabled(config) || change == 0
+			// Hitpoints, prayer and special attack are an amount rather than a boost or a drain, so
+			// having turned one on is asking to see it, full bar and all
+			if (!stat.isPoints()
+				&& ((change == 0 && !config.showUnchanged())
 				|| (change > 0 && !config.showBuffs())
-				|| (change < 0 && !config.showDebuffs()))
+				|| (change < 0 && !config.showDebuffs())))
 			{
 				continue;
 			}
