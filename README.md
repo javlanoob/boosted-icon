@@ -1,4 +1,4 @@
-# Boost Icon
+# Boosted Icon
 Icons by your health bar for the combat stats that are boosted or drained.
 
 When a combat stat is above or below its real level, the stat's own icon from the skills tab appears
@@ -57,7 +57,7 @@ party, so anyone running it is already sending everything needed, and their boos
 without them doing anything. Whatever reaches this plugin is levels rather than the boosts worked out
 from them, so your own settings decide what you see of theirs.
 
-For a party where nobody is sharing levels already, Boost Icon shares your own, and anyone else running
+For a party where nobody is sharing levels already, Boosted Icon shares your own, and anyone else running
 it with the setting on will show up as well.
 
 ### Stats

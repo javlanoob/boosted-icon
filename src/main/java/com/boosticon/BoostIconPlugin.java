@@ -32,7 +32,7 @@ import net.runelite.client.util.HotkeyListener;
 import net.runelite.client.util.Text;
 
 @PluginDescriptor(
-	name = "Boost Icon",
+	name = "Boosted Icon",
 	description = "Icons by your health bar for boosted or drained combat stats",
 	tags = {"boost", "drain", "potion", "stats", "combat", "party"}
 )
