@@ -151,7 +151,7 @@ public interface BoostIconConfig extends Config
 	@ConfigItem(
 		keyName = "lowPoints",
 		name = "Low points",
-		description = "Hitpoints and prayer below this much of the full amount turn the running out colour.",
+		description = "Hitpoints, prayer and special attack below this much of the full amount turn the running out colour.",
 		position = 12
 	)
 	default int lowPoints()
@@ -163,7 +163,7 @@ public interface BoostIconConfig extends Config
 	@ConfigItem(
 		keyName = "criticalPoints",
 		name = "Critical points",
-		description = "Hitpoints and prayer below this much of the full amount turn the debuff colour.",
+		description = "Hitpoints, prayer and special attack below this much of the full amount turn the debuff colour.",
 		position = 13
 	)
 	default int criticalPoints()
@@ -273,6 +273,18 @@ public interface BoostIconConfig extends Config
 		position = 107
 	)
 	default boolean showHitpoints()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+		keyName = "showSpecial",
+		name = "Special attack",
+		description = "Show an icon for your special attack energy. Off by default, since the orb already shows it.",
+		section = statsSection,
+		position = 108
+	)
+	default boolean showSpecial()
 	{
 		return false;
 	}

@@ -6,7 +6,8 @@ import net.runelite.api.gameval.SpriteID;
 
 /**
  * The seven skills that make up your combat level, in the order they sit in the stats tab, each with
- * the stats tab icon the game draws for it.
+ * the stats tab icon the game draws for it, and special attack, which is not a skill but runs down and
+ * comes back the way the points among them do.
  */
 enum CombatStat
 {
@@ -16,7 +17,14 @@ enum CombatStat
 	RANGED(Skill.RANGED, SpriteID.Staticons.RANGED, BoostIconConfig::showRanged),
 	PRAYER(Skill.PRAYER, SpriteID.Staticons.PRAYER, BoostIconConfig::showPrayer),
 	MAGIC(Skill.MAGIC, SpriteID.Staticons.MAGIC, BoostIconConfig::showMagic),
-	HITPOINTS(Skill.HITPOINTS, SpriteID.Staticons.HITPOINTS, BoostIconConfig::showHitpoints);
+	HITPOINTS(Skill.HITPOINTS, SpriteID.Staticons.HITPOINTS, BoostIconConfig::showHitpoints),
+	SPECIAL(null, SpriteID.OrbIcon.SPECIAL, BoostIconConfig::showSpecial);
+
+	/**
+	 * A full special attack bar. It is kept as a share of one rather than as a level, so this is the
+	 * most there can be of it.
+	 */
+	static final int FULL_PERCENT = 100;
 
 	private final Skill skill;
 	private final int spriteId;
@@ -29,6 +37,9 @@ enum CombatStat
 		this.enabled = enabled;
 	}
 
+	/**
+	 * The skill this stat is, or nothing where it is not a skill at all, as special attack is not.
+	 */
 	Skill getSkill()
 	{
 		return skill;
@@ -51,7 +62,25 @@ enum CombatStat
 	 */
 	boolean isPoints()
 	{
-		return this == HITPOINTS || this == PRAYER;
+		return this == HITPOINTS || this == PRAYER || this == SPECIAL;
+	}
+
+	/**
+	 * Whether the stat is a share of a full bar rather than a level, which special attack alone is.
+	 */
+	boolean isPercent()
+	{
+		return this == SPECIAL;
+	}
+
+	/**
+	 * Whether a number is one this stat could be at, so that nothing is made of a stat arriving from
+	 * elsewhere as something it cannot be. Levels start at one, while a special attack bar can be
+	 * empty, which is where a spec leaves it.
+	 */
+	boolean isPossible(int level)
+	{
+		return isPercent() ? level >= 0 && level <= FULL_PERCENT : level >= 1;
 	}
 
 	/**
@@ -63,7 +92,7 @@ enum CombatStat
 	{
 		for (CombatStat stat : values())
 		{
-			if (stat.skill.ordinal() == skillOrdinal)
+			if (stat.skill != null && stat.skill.ordinal() == skillOrdinal)
 			{
 				return stat;
 			}

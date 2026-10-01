@@ -14,6 +14,7 @@ import net.runelite.api.GameState;
 import net.runelite.api.Player;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
+import net.runelite.api.gameval.VarPlayerID;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
@@ -122,8 +123,8 @@ public class BoostIconPlugin extends Plugin
 
 		for (int i = 0; i < STATS.length; i++)
 		{
-			boosted[i] = client.getBoostedSkillLevel(STATS[i].getSkill());
-			real[i] = client.getRealSkillLevel(STATS[i].getSkill());
+			boosted[i] = now(STATS[i]);
+			real[i] = full(STATS[i]);
 		}
 
 		if (config.showSelf())
@@ -206,7 +207,7 @@ public class BoostIconPlugin extends Plugin
 
 		for (int i = 0; i < STATS.length; i++)
 		{
-			record(message.getMemberId(), STATS[i].getSkill().ordinal(), real[i], boosted[i]);
+			record(message.getMemberId(), STATS[i], real[i], boosted[i]);
 		}
 	}
 
@@ -226,26 +227,37 @@ public class BoostIconPlugin extends Plugin
 	}
 
 	/**
-	 * One stat of one party member, however it reached us. Levels come from whoever is sharing them and
-	 * are taken as nothing more than numbers: a stat with no icon here is dropped, and a level past 99
-	 * is a virtual level, which is a level in name only and not something a stat can be boosted above.
+	 * One skill of one party member, however it reached us. A skill with no icon here is dropped, and a
+	 * level past 99 is a virtual level, which is a level in name only and not something a stat can be
+	 * boosted above.
 	 */
 	void record(long memberId, int skillOrdinal, int level, int boostedLevel)
 	{
 		CombatStat stat = CombatStat.ofSkill(skillOrdinal);
+
+		if (stat != null)
+		{
+			record(memberId, stat, Math.min(level, Experience.MAX_REAL_LEVEL), boostedLevel);
+		}
+	}
+
+	/**
+	 * One stat of one party member. Levels come from whoever is sharing them and are taken as nothing
+	 * more than numbers, so anything a stat could not be at is dropped rather than drawn.
+	 */
+	void record(long memberId, CombatStat stat, int level, int boostedLevel)
+	{
 		PartyMember local = partyService.getLocalMember();
 
-		if (stat == null || level < 1 || boostedLevel < 1 || !config.partyStats()
+		if (!stat.isPossible(level) || !stat.isPossible(boostedLevel) || !config.partyStats()
 			|| (local != null && local.getMemberId() == memberId))
 		{
 			return;
 		}
 
-		int real = Math.min(level, Experience.MAX_REAL_LEVEL);
-
 		clientThread.invoke(() -> partyLevels
 			.computeIfAbsent(memberId, id -> new PartyLevels())
-			.set(stat, boostedLevel, real));
+			.set(stat, boostedLevel, level));
 	}
 
 	/**
@@ -257,6 +269,25 @@ public class BoostIconPlugin extends Plugin
 		{
 			partyService.send(new UserSync());
 		}
+	}
+
+	/**
+	 * What the stat is at now. Special attack is not a skill and is kept in tenths of a per cent, which
+	 * is finer than anything read off it here, so it is taken down to whole per cent.
+	 */
+	private int now(CombatStat stat)
+	{
+		return stat.isPercent()
+			? client.getVarpValue(VarPlayerID.SA_ENERGY) / 10
+			: client.getBoostedSkillLevel(stat.getSkill());
+	}
+
+	/**
+	 * What the stat sits at with nothing acting on it, which for special attack is a full bar.
+	 */
+	private int full(CombatStat stat)
+	{
+		return stat.isPercent() ? CombatStat.FULL_PERCENT : client.getRealSkillLevel(stat.getSkill());
 	}
 
 	private void addColumn(Player player, int[] boosted, int[] real)
