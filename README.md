@@ -10,7 +10,7 @@ Based on [Frozen Icon](https://github.com/HamzehAdawi/FrozenIcon) by HamzehAdawi
 thing for freezes and binds.
 
 ## Settings
-**Size**: how big the icons are drawn.
+**Size**: how much bigger than the skills tab's own icons they are drawn, keeping each one's shape.
 
 **Lower by**: how far below the health bar the column of icons sits. Below zero puts it above the bar.
 

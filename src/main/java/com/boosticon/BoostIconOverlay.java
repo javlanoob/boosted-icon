@@ -28,11 +28,6 @@ public class BoostIconOverlay extends Overlay
 
 	private static final int TEXT_OFFSET = 45;
 
-	/**
-	 * Smallest an icon is drawn, before the size setting is added to it.
-	 */
-	private static final int BASE_SIZE = 16;
-
 	private final Client client;
 	private final SpriteManager spriteManager;
 	private final BoostIconConfig config;
@@ -94,7 +89,7 @@ public class BoostIconOverlay extends Overlay
 		for (StatChange change : column.getChanges())
 		{
 			BufferedImage icon = spriteManager.getSprite(change.getStat().getSpriteId(), 0);
-			if (icon == null)
+			if (icon == null || icon.getWidth() < 1 || icon.getHeight() < 1)
 			{
 				continue;
 			}
@@ -110,12 +105,18 @@ public class BoostIconOverlay extends Overlay
 				return;
 			}
 
+			// The skill icons are not all the same shape, so the size goes on the height and the width
+			// follows it. At nothing added they are drawn as they are, the size the skills tab has them
+			int height = icon.getHeight() + size;
+			int width = Math.max(1, Math.round(icon.getWidth() * height / (float) icon.getHeight()));
+			int top = canvasPoint.getY() - adjustIcon;
+
 			graphics.drawImage(
 				icon,
 				canvasPoint.getX() + (right ? ICON_OFFSET : -ICON_OFFSET),
-				canvasPoint.getY() - adjustIcon,
-				size + BASE_SIZE,
-				size + BASE_SIZE,
+				top,
+				width,
+				height,
 				null);
 
 			String label = label(change);
@@ -125,11 +126,11 @@ public class BoostIconOverlay extends Overlay
 				text.setColor(color(change));
 				text.setPosition(
 					canvasPoint.getX() + size + (right ? TEXT_OFFSET : -TEXT_OFFSET),
-					canvasPoint.getY() + size + 11 - adjustIcon);
+					top + (height + graphics.getFontMetrics().getAscent()) / 2);
 				text.render(graphics);
 			}
 
-			adjustIcon += size + BASE_SIZE;
+			adjustIcon += height;
 		}
 	}
 
