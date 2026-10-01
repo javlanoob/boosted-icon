@@ -47,6 +47,20 @@ public class BoostIconOverlayTest
 			rows(BoostIconOverlay.outlined(sprite("#b"))));
 	}
 
+	/**
+	 * Every pixel of a scaled icon is a pixel of the sprite it came from, rather than a blend of the
+	 * ones around it, which is what leaves the outline somewhere definite to go.
+	 */
+	@Test
+	public void scalesByTakingPixelsRatherThanBlendingThem()
+	{
+		assertEquals(
+			Arrays.asList(
+				"#b",
+				"b#"),
+			rows(BoostIconOverlay.scaled(sprite("#b#b", "b##b", "#bb#", "bb##"), 2)));
+	}
+
 	private static BufferedImage sprite(String... rows)
 	{
 		BufferedImage sprite = new BufferedImage(rows[0].length(), rows.length, BufferedImage.TYPE_INT_ARGB);

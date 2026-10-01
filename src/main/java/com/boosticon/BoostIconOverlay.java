@@ -42,6 +42,12 @@ public class BoostIconOverlay extends Overlay
 	 */
 	private static final int DARK = 48;
 
+	/**
+	 * How opaque a pixel has to be to count as part of the icon rather than as room around it, so that
+	 * the edge of one is in a definite place for the outline to go around.
+	 */
+	private static final int SOLID = 128;
+
 	private final Client client;
 	private final SpriteManager spriteManager;
 	private final BoostIconConfig config;
@@ -234,11 +240,12 @@ public class BoostIconOverlay extends Overlay
 	}
 
 	/**
-	 * The sprite at the height the icons are drawn at, keeping its shape. Drawing a scaled image leaves
-	 * it to whatever the graphics is set to, which is nearest neighbour and drops pixels unevenly out of
-	 * artwork this small, so it is scaled here instead: smoothly, and once rather than every frame.
+	 * The sprite at the height the icons are drawn at, keeping its shape, taken a pixel at a time so
+	 * that every pixel of it stays the colour it was drawn in. Blending them instead leaves an edge
+	 * that fades out over a pixel or two, which is nowhere in particular for an outline to go, and ends
+	 * up with the outline showing along some of an icon and not the rest of it.
 	 */
-	private static BufferedImage scaled(BufferedImage sprite, int height)
+	static BufferedImage scaled(BufferedImage sprite, int height)
 	{
 		if (height == sprite.getHeight())
 		{
@@ -246,8 +253,21 @@ public class BoostIconOverlay extends Overlay
 		}
 
 		int width = Math.max(1, Math.round(sprite.getWidth() * height / (float) sprite.getHeight()));
+		BufferedImage scaled = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
 
-		return ImageUtil.resizeImage(sprite, width, height);
+		for (int x = 0; x < width; x++)
+		{
+			for (int y = 0; y < height; y++)
+			{
+				// The middle of what the pixel covers of the sprite, so that it lines up the same way
+				// in from either edge
+				scaled.setRGB(x, y, sprite.getRGB(
+					Math.min((x * 2 + 1) * sprite.getWidth() / (width * 2), sprite.getWidth() - 1),
+					Math.min((y * 2 + 1) * sprite.getHeight() / (height * 2), sprite.getHeight() - 1)));
+			}
+		}
+
+		return scaled;
 	}
 
 	/**
@@ -281,7 +301,7 @@ public class BoostIconOverlay extends Overlay
 
 	private static boolean empty(BufferedImage image, int x, int y)
 	{
-		return (image.getRGB(x, y) >>> 24) == 0;
+		return (image.getRGB(x, y) >>> 24) < SOLID;
 	}
 
 	/**
@@ -296,7 +316,7 @@ public class BoostIconOverlay extends Overlay
 			{
 				int pixel = image.getRGB(alongX, alongY);
 
-				if ((pixel >>> 24) != 0 && !dark(pixel))
+				if ((pixel >>> 24) >= SOLID && !dark(pixel))
 				{
 					return true;
 				}
