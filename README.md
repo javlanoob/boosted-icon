@@ -32,6 +32,9 @@ are the ones the game's own Boosts plugin uses, so a stat reads the same in both
 **Buff threshold**: how many levels a buff has left for it to count as running out and turn the colour
 above. 0 never does.
 
+**Show on yourself**: whether your own stats get icons. Off with **Party stats** on leaves only your
+team mates'.
+
 **Party stats**: with this on, the same icons appear over the heads of the party members around you.
 
 Party members do not need this plugin for that. Party Panel already shares every skill's level with the

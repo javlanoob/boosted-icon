@@ -148,10 +148,21 @@ public interface BoostIconConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = "showSelf",
+		name = "Show on yourself",
+		description = "Show your own boosted and drained stats over your head.",
+		position = 12
+	)
+	default boolean showSelf()
+	{
+		return true;
+	}
+
+	@ConfigItem(
 		keyName = "partyStats",
 		name = "Party stats",
 		description = "Show your party's boosted and drained stats over their heads. Team mates already sharing their stats with the party, as Party Panel does, need nothing else.",
-		position = 12
+		position = 13
 	)
 	default boolean partyStats()
 	{

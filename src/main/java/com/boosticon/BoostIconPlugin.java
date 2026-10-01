@@ -126,7 +126,10 @@ public class BoostIconPlugin extends Plugin
 			real[i] = client.getRealSkillLevel(STATS[i].getSkill());
 		}
 
-		addColumn(client.getLocalPlayer(), boosted, real);
+		if (config.showSelf())
+		{
+			addColumn(client.getLocalPlayer(), boosted, real);
+		}
 
 		partyPanelStats.listen(config.partyStats());
 		share(boosted, real);
