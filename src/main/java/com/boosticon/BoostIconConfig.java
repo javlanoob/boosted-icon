@@ -185,24 +185,24 @@ public interface BoostIconConfig extends Config
 
 	@Range(max = 100)
 	@ConfigItem(
-		keyName = "lowPoints",
-		name = "Low points",
-		description = "Hitpoints, prayer and special attack below this much of the full amount turn the running out colour.",
+		keyName = "lowHp",
+		name = "Low HP",
+		description = "Hitpoints or prayer below this much of the full amount turn the running out colour.",
 		position = 15
 	)
-	default int lowPoints()
+	default int lowHp()
 	{
 		return 60;
 	}
 
 	@Range(max = 100)
 	@ConfigItem(
-		keyName = "criticalPoints",
-		name = "Critical points",
-		description = "Hitpoints, prayer and special attack below this much of the full amount turn the debuff colour.",
+		keyName = "criticalHp",
+		name = "Critical HP",
+		description = "Hitpoints or prayer below this much of the full amount turn the debuff colour.",
 		position = 16
 	)
-	default int criticalPoints()
+	default int criticalHp()
 	{
 		return 35;
 	}

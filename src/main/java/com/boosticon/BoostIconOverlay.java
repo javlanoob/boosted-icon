@@ -196,12 +196,12 @@ public class BoostIconOverlay extends Overlay
 
 		int left = stat.getLevel() * 100 / full;
 
-		if (left < config.criticalPoints())
+		if (left < config.criticalHp())
 		{
 			return config.debuffColor();
 		}
 
-		return left < config.lowPoints() ? config.expiringColor() : config.buffColor();
+		return left < config.lowHp() ? config.expiringColor() : config.buffColor();
 	}
 
 	/**
@@ -375,6 +375,12 @@ public class BoostIconOverlay extends Overlay
 	 */
 	private Color color(StatChange stat)
 	{
+		if (stat.getStat().isPercent())
+		{
+			// A spec costs what it costs, so there is no amount of it that counts as being in trouble
+			return config.unchangedColor();
+		}
+
 		if (stat.getStat().isPoints())
 		{
 			return pointsColor(stat);

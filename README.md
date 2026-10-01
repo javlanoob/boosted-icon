@@ -39,8 +39,10 @@ both.
 **Buff threshold**: how many levels a buff has left for it to count as running out and turn the colour
 above. 0 never does.
 
-**Low points** and **Critical points**: the share of your hitpoints, prayer or special attack left at
-which the number turns the running out colour, and then the debuff colour. 60 and 35 to start with.
+**Low HP** and **Critical HP**: the share of your hitpoints or prayer left at which the number turns
+the running out colour, and then the debuff colour. 60 and 35 to start with. Special attack is left out
+of it, since a spec costs what it costs and there is no amount of it that counts as being in trouble;
+its number takes the unpotted colour throughout.
 
 **Show on yourself**: whether your own stats get icons. Off with **Party stats** on leaves only your
 team mates'.
@@ -65,6 +67,6 @@ Hitpoints and Special attack are off, since all three are already on the orbs.
 
 Those three are read differently when you do turn them on. A level that is off where it should be is
 news in itself, but hitpoints, prayer and special attack run down all trip, so what is left of them is
-the news instead: the number is always what you have, as points or as per cent, and its colour comes
-from how much of the full amount that is rather than from which way it is off. Having turned one on is
-asking to see it, so it stays up at a full bar as well.
+the news instead: the number is always what you have, as points or as per cent. Hitpoints and prayer
+are coloured by how much of the full amount that is rather than by which way they are off it. Having
+turned one on is asking to see it, so it stays up at a full bar as well.
