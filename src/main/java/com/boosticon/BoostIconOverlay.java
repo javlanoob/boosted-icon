@@ -1,6 +1,8 @@
 package com.boosticon;
 
+import java.awt.AlphaComposite;
 import java.awt.Color;
+import java.awt.Composite;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics2D;
@@ -86,7 +88,7 @@ public class BoostIconOverlay extends Overlay
 	{
 		List<StatColumn> columns = plugin.getColumns();
 
-		if (columns.isEmpty())
+		if (columns.isEmpty() || plugin.isHidden())
 		{
 			return null;
 		}
@@ -99,10 +101,16 @@ public class BoostIconOverlay extends Overlay
 		// Three at the least, since the outline takes a pixel at the top and another at the bottom
 		int height = Math.max(3, BASE_HEIGHT + size);
 
+		// Put back afterwards, since the graphics goes on to the overlays after this one
+		Composite composite = graphics.getComposite();
+		graphics.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, opacity()));
+
 		for (StatColumn column : columns)
 		{
 			drawColumn(graphics, column, size, height, right);
 		}
+
+		graphics.setComposite(composite);
 
 		return null;
 	}
@@ -162,6 +170,15 @@ public class BoostIconOverlay extends Overlay
 
 			adjustIcon += icon.getHeight();
 		}
+	}
+
+	/**
+	 * How solid everything is drawn, as the share of the way there the setting is. Anything outside the
+	 * settings panel could have put anything in it, so it is held to what it can be.
+	 */
+	private float opacity()
+	{
+		return Math.max(0, Math.min(100, config.opacity())) / 100f;
 	}
 
 	/**
@@ -364,6 +381,11 @@ public class BoostIconOverlay extends Overlay
 		}
 
 		int change = stat.getChange();
+
+		if (change == 0)
+		{
+			return config.unchangedColor();
+		}
 
 		if (change < 0)
 		{

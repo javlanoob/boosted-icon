@@ -6,6 +6,7 @@ import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
 import net.runelite.client.config.ConfigSection;
+import net.runelite.client.config.Keybind;
 import net.runelite.client.config.Range;
 
 @ConfigGroup(BoostIconConfig.GROUP)
@@ -69,7 +70,7 @@ public interface BoostIconConfig extends Config
 	@ConfigItem(
 		keyName = "statText",
 		name = "Show",
-		description = "What to write next to each icon. Hitpoints and prayer always read as how much is left.",
+		description = "What to write next to each icon. Hitpoints, prayer and special attack always read as how much is left.",
 		position = 5
 	)
 	default StatText statText()
@@ -99,12 +100,35 @@ public interface BoostIconConfig extends Config
 		return true;
 	}
 
+	@ConfigItem(
+		keyName = "showUnchanged",
+		name = "Show unpotted",
+		description = "Show stats that are sitting at their real level. Hitpoints, prayer and special attack always show, since a full bar is worth seeing.",
+		position = 8
+	)
+	default boolean showUnchanged()
+	{
+		return false;
+	}
+
+	@Range(max = 100)
+	@ConfigItem(
+		keyName = "opacity",
+		name = "Opacity",
+		description = "How solid the icons and numbers are drawn. 100 is solid and 0 is invisible.",
+		position = 9
+	)
+	default int opacity()
+	{
+		return 100;
+	}
+
 	@Alpha
 	@ConfigItem(
 		keyName = "buffColor",
 		name = "Buff colour",
 		description = "Colour of the number on a buffed stat.",
-		position = 8
+		position = 10
 	)
 	default Color buffColor()
 	{
@@ -116,7 +140,7 @@ public interface BoostIconConfig extends Config
 		keyName = "debuffColor",
 		name = "Debuff colour",
 		description = "Colour of the number on a debuffed stat.",
-		position = 9
+		position = 11
 	)
 	default Color debuffColor()
 	{
@@ -128,11 +152,23 @@ public interface BoostIconConfig extends Config
 		keyName = "expiringColor",
 		name = "Running out colour",
 		description = "Colour of the number once a buff is down to its last few levels.",
-		position = 10
+		position = 12
 	)
 	default Color expiringColor()
 	{
 		return Color.YELLOW;
+	}
+
+	@Alpha
+	@ConfigItem(
+		keyName = "unchangedColor",
+		name = "Unpotted colour",
+		description = "Colour of the number on a stat that is at its real level.",
+		position = 13
+	)
+	default Color unchangedColor()
+	{
+		return Color.WHITE;
 	}
 
 	@Range(max = 99)
@@ -140,7 +176,7 @@ public interface BoostIconConfig extends Config
 		keyName = "buffThreshold",
 		name = "Buff threshold",
 		description = "How many levels a buff has left for it to count as running out. 0 for never.",
-		position = 11
+		position = 14
 	)
 	default int buffThreshold()
 	{
@@ -152,7 +188,7 @@ public interface BoostIconConfig extends Config
 		keyName = "lowPoints",
 		name = "Low points",
 		description = "Hitpoints, prayer and special attack below this much of the full amount turn the running out colour.",
-		position = 12
+		position = 15
 	)
 	default int lowPoints()
 	{
@@ -164,7 +200,7 @@ public interface BoostIconConfig extends Config
 		keyName = "criticalPoints",
 		name = "Critical points",
 		description = "Hitpoints, prayer and special attack below this much of the full amount turn the debuff colour.",
-		position = 13
+		position = 16
 	)
 	default int criticalPoints()
 	{
@@ -175,7 +211,7 @@ public interface BoostIconConfig extends Config
 		keyName = "showSelf",
 		name = "Show on yourself",
 		description = "Show your own boosted and drained stats over your head.",
-		position = 14
+		position = 17
 	)
 	default boolean showSelf()
 	{
@@ -186,11 +222,22 @@ public interface BoostIconConfig extends Config
 		keyName = "partyStats",
 		name = "Party stats",
 		description = "Show your party's boosted and drained stats over their heads. Team mates already sharing their stats with the party, as Party Panel does, need nothing else.",
-		position = 15
+		position = 18
 	)
 	default boolean partyStats()
 	{
 		return false;
+	}
+
+	@ConfigItem(
+		keyName = "toggle",
+		name = "Toggle",
+		description = "A key that turns the icons off and back on. Unassigned to start with.",
+		position = 19
+	)
+	default Keybind toggle()
+	{
+		return Keybind.NOT_SET;
 	}
 
 	@ConfigItem(

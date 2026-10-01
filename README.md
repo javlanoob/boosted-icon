@@ -26,8 +26,15 @@ nothing. Hitpoints, prayer and special attack ignore this and always read as how
 **Show buffs** and **Show debuffs**: whether stats above their level, below their level, or both get
 an icon.
 
-**Buff colour**, **Debuff colour** and **Running out colour**: the colour of the number. The defaults
-are the ones the game's own Boosts plugin uses, so a stat reads the same in both.
+**Show unpotted**: whether a stat sitting at its real level gets one as well, which turns the icons
+into a row of everything you have switched on rather than only what is off. Hitpoints, prayer and
+special attack ignore this and always show, since a full bar is worth seeing too.
+
+**Opacity**: how solid the icons and numbers are drawn, from 100 down to invisible.
+
+**Buff colour**, **Debuff colour**, **Running out colour** and **Unpotted colour**: the colour of the
+number. The first three are the ones the game's own Boosts plugin uses, so a stat reads the same in
+both.
 
 **Buff threshold**: how many levels a buff has left for it to count as running out and turn the colour
 above. 0 never does.
@@ -37,6 +44,9 @@ which the number turns the running out colour, and then the debuff colour. 60 an
 
 **Show on yourself**: whether your own stats get icons. Off with **Party stats** on leaves only your
 team mates'.
+
+**Toggle**: a key that puts the icons away and brings them back. Unassigned to start with. Levels are
+still kept up to date and still shared with the party while they are away.
 
 **Party stats**: with this on, the same icons appear over the heads of the party members around you.
 
@@ -56,5 +66,5 @@ Hitpoints and Special attack are off, since all three are already on the orbs.
 Those three are read differently when you do turn them on. A level that is off where it should be is
 news in itself, but hitpoints, prayer and special attack run down all trip, so what is left of them is
 the news instead: the number is always what you have, as points or as per cent, and its colour comes
-from how much of the full amount that is rather than from which way it is off. They still only appear
-while off the full amount, so nothing sits over your head between fights.
+from how much of the full amount that is rather than from which way it is off. Having turned one on is
+asking to see it, so it stays up at a full bar as well.
