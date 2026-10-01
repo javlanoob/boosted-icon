@@ -66,7 +66,7 @@ runs down and comes back the way they do. Attack, Strength, Defence, Ranged and 
 Hitpoints and Special attack are off, since all three are already on the orbs.
 
 Those three are read differently when you do turn them on. A level that is off where it should be is
-news in itself, but hitpoints, prayer and special attack run down all trip, so what is left of them is
+news in itself, but hitpoints, prayer and special attack run down all fight, so what is left of them is
 the news instead: the number is always what you have, as points or as per cent. Hitpoints and prayer
 are coloured by how much of the full amount that is rather than by which way they are off it. Having
 turned one on is asking to see it, so it stays up at a full bar as well.
