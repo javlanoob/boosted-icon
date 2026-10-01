@@ -28,6 +28,11 @@ public class BoostIconOverlay extends Overlay
 
 	private static final int TEXT_OFFSET = 45;
 
+	/**
+	 * How tall an icon is drawn before the size setting, which is smaller than the skills tab draws them.
+	 */
+	private static final int BASE_HEIGHT = 16;
+
 	private final Client client;
 	private final SpriteManager spriteManager;
 	private final BoostIconConfig config;
@@ -106,8 +111,8 @@ public class BoostIconOverlay extends Overlay
 			}
 
 			// The skill icons are not all the same shape, so the size goes on the height and the width
-			// follows it. At nothing added they are drawn as they are, the size the skills tab has them
-			int height = icon.getHeight() + size;
+			// follows it, rather than squaring everything off
+			int height = Math.max(1, BASE_HEIGHT + size);
 			int width = Math.max(1, Math.round(icon.getWidth() * height / (float) icon.getHeight()));
 			int top = canvasPoint.getY() - adjustIcon;
 

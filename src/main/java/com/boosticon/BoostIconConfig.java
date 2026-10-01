@@ -20,11 +20,11 @@ public interface BoostIconConfig extends Config
 	)
 	String statsSection = "stats";
 
-	@Range(max = 100)
+	@Range(min = -12, max = 100)
 	@ConfigItem(
 		keyName = "size",
 		name = "Size",
-		description = "Adjust the size of the icons.",
+		description = "Adjust the size of the icons. Below zero for smaller than they are now.",
 		position = 1
 	)
 	default int size()
