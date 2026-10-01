@@ -36,6 +36,12 @@ public class BoostIconOverlay extends Overlay
 	 */
 	private static final int BASE_HEIGHT = 16;
 
+	/**
+	 * How light a pixel has to be to want an outline pixel of its own next to it. The skill icons are
+	 * drawn with a dark edge already, and going around that as well is what reads as two pixels thick.
+	 */
+	private static final int DARK = 48;
+
 	private final Client client;
 	private final SpriteManager spriteManager;
 	private final BoostIconConfig config;
@@ -187,13 +193,74 @@ public class BoostIconOverlay extends Overlay
 			return null;
 		}
 
-		outlined = ImageUtil.outlineImage(
-			ImageUtil.resizeCanvas(sprite, sprite.getWidth() + 2, sprite.getHeight() + 2),
-			Color.BLACK);
+		outlined = outlined(sprite);
 
 		icons.put(stat.getSpriteId(), outlined);
 
 		return outlined;
+	}
+
+	/**
+	 * Black put in around a sprite, wherever the sprite does not have something dark enough there
+	 * already, so the icon ends up with an edge of one pixel all the way round rather than two in the
+	 * places the artwork was already outlined.
+	 */
+	static BufferedImage outlined(BufferedImage sprite)
+	{
+		int width = sprite.getWidth() + 2;
+		int height = sprite.getHeight() + 2;
+
+		// A pixel of room on each side, for the outline to have somewhere to go
+		BufferedImage image = ImageUtil.resizeCanvas(sprite, width, height);
+		BufferedImage outlined = ImageUtil.resizeCanvas(sprite, width, height);
+
+		for (int x = 0; x < width; x++)
+		{
+			for (int y = 0; y < height; y++)
+			{
+				// Read from the sprite throughout, so a pixel just filled in cannot grow the outline
+				if (empty(image, x, y) && bordersLight(image, x, y))
+				{
+					outlined.setRGB(x, y, Color.BLACK.getRGB());
+				}
+			}
+		}
+
+		return outlined;
+	}
+
+	private static boolean empty(BufferedImage image, int x, int y)
+	{
+		return (image.getRGB(x, y) >>> 24) == 0;
+	}
+
+	/**
+	 * Whether any of the eight pixels around this one is part of the icon and light enough to need an
+	 * outline of its own.
+	 */
+	private static boolean bordersLight(BufferedImage image, int x, int y)
+	{
+		for (int alongX = Math.max(x - 1, 0); alongX <= Math.min(x + 1, image.getWidth() - 1); alongX++)
+		{
+			for (int alongY = Math.max(y - 1, 0); alongY <= Math.min(y + 1, image.getHeight() - 1); alongY++)
+			{
+				int pixel = image.getRGB(alongX, alongY);
+
+				if ((pixel >>> 24) != 0 && !dark(pixel))
+				{
+					return true;
+				}
+			}
+		}
+
+		return false;
+	}
+
+	private static boolean dark(int pixel)
+	{
+		int lightest = Math.max((pixel >> 16) & 0xff, Math.max((pixel >> 8) & 0xff, pixel & 0xff));
+
+		return lightest < DARK;
 	}
 
 	private String label(StatChange change)
