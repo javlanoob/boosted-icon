@@ -45,10 +45,21 @@ public interface BoostIconConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = "anchor",
+		name = "Anchor",
+		description = "What the icons are measured from: the player's head, middle or feet.",
+		position = 3
+	)
+	default IconAnchor iconAnchor()
+	{
+		return IconAnchor.TOP;
+	}
+
+	@ConfigItem(
 		keyName = "position",
 		name = "Icon position",
 		description = "Change what side of the HP bar the icons appear.",
-		position = 3
+		position = 4
 	)
 	default IconSide iconSide()
 	{
@@ -59,7 +70,7 @@ public interface BoostIconConfig extends Config
 		keyName = "statText",
 		name = "Show",
 		description = "What to write next to each icon.",
-		position = 4
+		position = 5
 	)
 	default StatText statText()
 	{
@@ -70,7 +81,7 @@ public interface BoostIconConfig extends Config
 		keyName = "showBuffs",
 		name = "Show buffs",
 		description = "Show stats that are above their real level.",
-		position = 5
+		position = 6
 	)
 	default boolean showBuffs()
 	{
@@ -81,7 +92,7 @@ public interface BoostIconConfig extends Config
 		keyName = "showDebuffs",
 		name = "Show debuffs",
 		description = "Show stats that are below their real level.",
-		position = 6
+		position = 7
 	)
 	default boolean showDebuffs()
 	{
@@ -93,7 +104,7 @@ public interface BoostIconConfig extends Config
 		keyName = "buffColor",
 		name = "Buff colour",
 		description = "Colour of the number on a buffed stat.",
-		position = 7
+		position = 8
 	)
 	default Color buffColor()
 	{
@@ -105,7 +116,7 @@ public interface BoostIconConfig extends Config
 		keyName = "debuffColor",
 		name = "Debuff colour",
 		description = "Colour of the number on a debuffed stat.",
-		position = 8
+		position = 9
 	)
 	default Color debuffColor()
 	{
@@ -117,7 +128,7 @@ public interface BoostIconConfig extends Config
 		keyName = "expiringColor",
 		name = "Running out colour",
 		description = "Colour of the number once a buff is down to its last few levels.",
-		position = 9
+		position = 10
 	)
 	default Color expiringColor()
 	{
@@ -129,7 +140,7 @@ public interface BoostIconConfig extends Config
 		keyName = "buffThreshold",
 		name = "Buff threshold",
 		description = "How many levels a buff has left for it to count as running out. 0 for never.",
-		position = 10
+		position = 11
 	)
 	default int buffThreshold()
 	{
@@ -140,7 +151,7 @@ public interface BoostIconConfig extends Config
 		keyName = "partyStats",
 		name = "Party stats",
 		description = "Show your party's boosted and drained stats over their heads. Team mates already sharing their stats with the party, as Party Panel does, need nothing else.",
-		position = 11
+		position = 12
 	)
 	default boolean partyStats()
 	{

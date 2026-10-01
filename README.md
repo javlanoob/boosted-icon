@@ -15,6 +15,9 @@ being squared off.
 
 **Lower by**: how far below the health bar the column of icons sits. Below zero puts it above the bar.
 
+**Anchor**: what the icons are measured from — the player's head, where the health bar is, their
+middle, or the tile they are standing on. **Lower by** then moves them from there.
+
 **Icon position**: which side of the health bar the icons appear on.
 
 **Show**: what goes next to each icon — the change (`+5`, `-3`), the level the stat is at now, or

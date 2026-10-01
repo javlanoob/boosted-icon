@@ -97,6 +97,8 @@ public class BoostIconOverlay extends Overlay
 			return;
 		}
 
+		int anchor = anchor(player);
+
 		// The column is drawn upwards from here, so lowering it is taking off the height it starts at
 		int adjustIcon = 5 - config.drop();
 		for (StatChange change : column.getChanges())
@@ -111,7 +113,7 @@ public class BoostIconOverlay extends Overlay
 				client,
 				location,
 				icon,
-				player.getLogicalHeight());
+				anchor);
 
 			if (canvasPoint == null)
 			{
@@ -144,6 +146,23 @@ public class BoostIconOverlay extends Overlay
 			}
 
 			adjustIcon += height;
+		}
+	}
+
+	/**
+	 * How far up the player the column is measured from, which is as tall as the player for the health
+	 * bar it normally sits by, and nothing at all for the tile they are standing on.
+	 */
+	private int anchor(Player player)
+	{
+		switch (config.iconAnchor())
+		{
+			case BOTTOM:
+				return 0;
+			case MIDDLE:
+				return player.getLogicalHeight() / 2;
+			default:
+				return player.getLogicalHeight();
 		}
 	}
 
