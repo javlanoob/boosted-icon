@@ -16,6 +16,7 @@ import net.runelite.client.game.SpriteManager;
 import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
+import net.runelite.client.ui.overlay.components.TextComponent;
 
 public class BoostIconOverlay extends Overlay
 {
@@ -37,6 +38,12 @@ public class BoostIconOverlay extends Overlay
 	private final BoostIconConfig config;
 	private final BoostIconPlugin plugin;
 
+	/**
+	 * Drawn through this rather than straight onto the graphics for the black outline it puts behind the
+	 * text, which keeps a number readable over whatever the player is standing on.
+	 */
+	private final TextComponent text = new TextComponent();
+
 	@Inject
 	BoostIconOverlay(Client client, SpriteManager spriteManager, BoostIconConfig config, BoostIconPlugin plugin)
 	{
@@ -46,6 +53,7 @@ public class BoostIconOverlay extends Overlay
 		this.spriteManager = spriteManager;
 		this.config = config;
 		this.plugin = plugin;
+		text.setOutline(true);
 	}
 
 	@Override
@@ -81,7 +89,8 @@ public class BoostIconOverlay extends Overlay
 			return;
 		}
 
-		int adjustIcon = 5;
+		// The column is drawn upwards from here, so lowering it is taking off the height it starts at
+		int adjustIcon = 5 - config.drop();
 		for (StatChange change : column.getChanges())
 		{
 			BufferedImage icon = spriteManager.getSprite(change.getStat().getSpriteId(), 0);
@@ -109,22 +118,22 @@ public class BoostIconOverlay extends Overlay
 				size + BASE_SIZE,
 				null);
 
-			String text = text(change);
-			if (text != null)
+			String label = label(change);
+			if (label != null)
 			{
-				graphics.setColor(change.getChange() > 0 ? config.boostColor() : config.drainColor());
-				graphics.drawString(
-					text,
+				text.setText(label);
+				text.setColor(color(change));
+				text.setPosition(
 					canvasPoint.getX() + size + (right ? TEXT_OFFSET : -TEXT_OFFSET),
 					canvasPoint.getY() + size + 11 - adjustIcon);
-				graphics.setColor(Color.WHITE);
+				text.render(graphics);
 			}
 
 			adjustIcon += size + BASE_SIZE;
 		}
 	}
 
-	private String text(StatChange change)
+	private String label(StatChange change)
 	{
 		switch (config.statText())
 		{
@@ -135,5 +144,23 @@ public class BoostIconOverlay extends Overlay
 			default:
 				return null;
 		}
+	}
+
+	/**
+	 * The colours the game's own Boosts plugin uses, so a stat reads the same here as it does there:
+	 * green while buffed, yellow once the buff is down to its last levels, red while debuffed.
+	 */
+	private Color color(StatChange stat)
+	{
+		int change = stat.getChange();
+
+		if (change < 0)
+		{
+			return config.debuffColor();
+		}
+
+		int threshold = config.buffThreshold();
+
+		return threshold > 0 && change <= threshold ? config.expiringColor() : config.buffColor();
 	}
 }

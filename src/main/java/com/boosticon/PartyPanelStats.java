@@ -87,6 +87,15 @@ class PartyPanelStats
 
 	private void onMessage(Object event)
 	{
+		readLevels(event, plugin::record);
+	}
+
+	/**
+	 * Every stat in one of the other plugin's changes. A change can carry other things and no stats at
+	 * all, and anything that turns out not to be the message it was taken for has no levels to read.
+	 */
+	static void readLevels(Object event, Levels levels)
+	{
 		if (!(event instanceof PartyMemberMessage))
 		{
 			return;
@@ -111,7 +120,7 @@ class PartyPanelStats
 					continue;
 				}
 
-				plugin.record(
+				levels.record(
 					memberId,
 					readInt(change, SKILL),
 					readInt(change, LEVEL),
@@ -130,23 +139,28 @@ class PartyPanelStats
 		{
 			Object registered = read(wsClient, WSClient.class, MESSAGES);
 
-			if (!(registered instanceof Collection))
-			{
-				return null;
-			}
-
-			for (Object type : (Collection<?>) registered)
-			{
-				if (type instanceof Class && MESSAGE.equals(((Class<?>) type).getSimpleName()))
-				{
-					return (Class<?>) type;
-				}
-			}
+			return registered instanceof Collection ? messageIn((Collection<?>) registered) : null;
 		}
 		catch (ReflectiveOperationException | RuntimeException e)
 		{
 			// Another plugin is registering a message of its own as this reads the list, so the next
 			// look will see whatever it ends up as
+			return null;
+		}
+	}
+
+	/**
+	 * The other plugin's message among the ones the party connection has been told about, picked out by
+	 * the name the connection itself tells its messages apart by.
+	 */
+	static Class<?> messageIn(Collection<?> types)
+	{
+		for (Object type : types)
+		{
+			if (type instanceof Class && MESSAGE.equals(((Class<?>) type).getSimpleName()))
+			{
+				return (Class<?>) type;
+			}
 		}
 
 		return null;
@@ -172,5 +186,13 @@ class PartyPanelStats
 		Field field = type.getDeclaredField(name);
 		field.setAccessible(true);
 		return field;
+	}
+
+	/**
+	 * Where the levels read out of a message go.
+	 */
+	interface Levels
+	{
+		void record(long memberId, int skillOrdinal, int level, int boostedLevel);
 	}
 }

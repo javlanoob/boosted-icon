@@ -29,14 +29,26 @@ public interface BoostIconConfig extends Config
 	)
 	default int size()
 	{
-		return 3;
+		return 0;
+	}
+
+	@Range(min = -200, max = 200)
+	@ConfigItem(
+		keyName = "drop",
+		name = "Lower by",
+		description = "How far below the health bar the icons sit. Below zero puts them above it.",
+		position = 2
+	)
+	default int drop()
+	{
+		return 20;
 	}
 
 	@ConfigItem(
 		keyName = "position",
 		name = "Icon position",
 		description = "Change what side of the HP bar the icons appear.",
-		position = 2
+		position = 3
 	)
 	default IconSide iconSide()
 	{
@@ -47,7 +59,7 @@ public interface BoostIconConfig extends Config
 		keyName = "statText",
 		name = "Show",
 		description = "What to write next to each icon.",
-		position = 3
+		position = 4
 	)
 	default StatText statText()
 	{
@@ -55,56 +67,80 @@ public interface BoostIconConfig extends Config
 	}
 
 	@ConfigItem(
-		keyName = "showBoosts",
-		name = "Show boosts",
+		keyName = "showBuffs",
+		name = "Show buffs",
 		description = "Show stats that are above their real level.",
-		position = 4
-	)
-	default boolean showBoosts()
-	{
-		return true;
-	}
-
-	@ConfigItem(
-		keyName = "showDrains",
-		name = "Show drains",
-		description = "Show stats that are below their real level.",
 		position = 5
 	)
-	default boolean showDrains()
+	default boolean showBuffs()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "showDebuffs",
+		name = "Show debuffs",
+		description = "Show stats that are below their real level.",
+		position = 6
+	)
+	default boolean showDebuffs()
 	{
 		return true;
 	}
 
 	@Alpha
 	@ConfigItem(
-		keyName = "boostColor",
-		name = "Boost colour",
-		description = "Colour of the number on a boosted stat.",
-		position = 6
+		keyName = "buffColor",
+		name = "Buff colour",
+		description = "Colour of the number on a buffed stat.",
+		position = 7
 	)
-	default Color boostColor()
+	default Color buffColor()
 	{
-		return new Color(0, 255, 0);
+		return Color.GREEN;
 	}
 
 	@Alpha
 	@ConfigItem(
-		keyName = "drainColor",
-		name = "Drain colour",
-		description = "Colour of the number on a drained stat.",
-		position = 7
+		keyName = "debuffColor",
+		name = "Debuff colour",
+		description = "Colour of the number on a debuffed stat.",
+		position = 8
 	)
-	default Color drainColor()
+	default Color debuffColor()
 	{
-		return new Color(255, 48, 48);
+		return new Color(238, 51, 51);
+	}
+
+	@Alpha
+	@ConfigItem(
+		keyName = "expiringColor",
+		name = "Running out colour",
+		description = "Colour of the number once a buff is down to its last few levels.",
+		position = 9
+	)
+	default Color expiringColor()
+	{
+		return Color.YELLOW;
+	}
+
+	@Range(max = 99)
+	@ConfigItem(
+		keyName = "buffThreshold",
+		name = "Buff threshold",
+		description = "How many levels a buff has left for it to count as running out. 0 for never.",
+		position = 10
+	)
+	default int buffThreshold()
+	{
+		return 3;
 	}
 
 	@ConfigItem(
 		keyName = "partyStats",
 		name = "Party stats",
 		description = "Show your party's boosted and drained stats over their heads. Team mates already sharing their stats with the party, as Party Panel does, need nothing else.",
-		position = 8
+		position = 11
 	)
 	default boolean partyStats()
 	{

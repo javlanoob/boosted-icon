@@ -277,8 +277,8 @@ public class BoostIconPlugin extends Plugin
 			int change = boosted[i] - real[i];
 
 			if (!stat.isEnabled(config) || change == 0
-				|| (change > 0 && !config.showBoosts())
-				|| (change < 0 && !config.showDrains()))
+				|| (change > 0 && !config.showBuffs())
+				|| (change < 0 && !config.showDebuffs()))
 			{
 				continue;
 			}
