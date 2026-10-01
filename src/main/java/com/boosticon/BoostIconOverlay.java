@@ -5,7 +5,9 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import javax.inject.Inject;
 import net.runelite.api.Client;
 import net.runelite.api.Perspective;
@@ -17,6 +19,7 @@ import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
 import net.runelite.client.ui.overlay.components.TextComponent;
+import net.runelite.client.util.ImageUtil;
 
 public class BoostIconOverlay extends Overlay
 {
@@ -43,6 +46,11 @@ public class BoostIconOverlay extends Overlay
 	 * text, which keeps a number readable over whatever the player is standing on.
 	 */
 	private final TextComponent text = new TextComponent();
+
+	/**
+	 * The outlined icons, kept by sprite, since outlining one is work that only has to happen once.
+	 */
+	private final Map<Integer, BufferedImage> icons = new HashMap<>();
 
 	@Inject
 	BoostIconOverlay(Client client, SpriteManager spriteManager, BoostIconConfig config, BoostIconPlugin plugin)
@@ -93,8 +101,8 @@ public class BoostIconOverlay extends Overlay
 		int adjustIcon = 5 - config.drop();
 		for (StatChange change : column.getChanges())
 		{
-			BufferedImage icon = spriteManager.getSprite(change.getStat().getSpriteId(), 0);
-			if (icon == null || icon.getWidth() < 1 || icon.getHeight() < 1)
+			BufferedImage icon = icon(change.getStat());
+			if (icon == null)
 			{
 				continue;
 			}
@@ -137,6 +145,36 @@ public class BoostIconOverlay extends Overlay
 
 			adjustIcon += height;
 		}
+	}
+
+	/**
+	 * A skill's icon with a black outline around it, which is what keeps it off whatever is behind it.
+	 * The outline has to go somewhere, so the sprite is given a pixel of room on each side for it first.
+	 */
+	private BufferedImage icon(CombatStat stat)
+	{
+		BufferedImage outlined = icons.get(stat.getSpriteId());
+
+		if (outlined != null)
+		{
+			return outlined;
+		}
+
+		BufferedImage sprite = spriteManager.getSprite(stat.getSpriteId(), 0);
+
+		if (sprite == null || sprite.getWidth() < 1 || sprite.getHeight() < 1)
+		{
+			// Still being loaded, so there is nothing to outline yet
+			return null;
+		}
+
+		outlined = ImageUtil.outlineImage(
+			ImageUtil.resizeCanvas(sprite, sprite.getWidth() + 2, sprite.getHeight() + 2),
+			Color.BLACK);
+
+		icons.put(stat.getSpriteId(), outlined);
+
+		return outlined;
 	}
 
 	private String label(StatChange change)
