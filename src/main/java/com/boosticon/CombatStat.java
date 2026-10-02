@@ -32,12 +32,6 @@ enum CombatStat
 	 */
 	static final CombatStat[] ALL = values();
 
-	/**
-	 * The stat each {@link Skill} is, by ordinal, with nothing where a skill has no bearing on combat, so
-	 * that a skill arriving from another player is a look up rather than a search.
-	 */
-	private static final CombatStat[] BY_SKILL = bySkill();
-
 	private final Skill skill;
 	private final int spriteId;
 	private final Predicate<BoostIconConfig> enabled;
@@ -93,30 +87,5 @@ enum CombatStat
 	boolean isPossible(int level)
 	{
 		return isPercent() ? level >= 0 && level <= FULL_PERCENT : level >= 1;
-	}
-
-	/**
-	 * The stat a {@link Skill} ordinal stands for, or nothing where it is a skill with no bearing on
-	 * combat, or no skill at all. Ordinals arrive from other players, so the skill itself is never
-	 * looked up by one, and an ordinal no skill has is one of the things they could arrive as.
-	 */
-	static CombatStat ofSkill(int skillOrdinal)
-	{
-		return skillOrdinal >= 0 && skillOrdinal < BY_SKILL.length ? BY_SKILL[skillOrdinal] : null;
-	}
-
-	private static CombatStat[] bySkill()
-	{
-		CombatStat[] stats = new CombatStat[Skill.values().length];
-
-		for (CombatStat stat : ALL)
-		{
-			if (stat.skill != null)
-			{
-				stats[stat.skill.ordinal()] = stat;
-			}
-		}
-
-		return stats;
 	}
 }

@@ -52,13 +52,12 @@ still kept up to date and still shared with the party while they are away.
 
 **Party stats**: with this on, the same icons appear over the heads of the party members around you.
 
-Party members do not need this plugin for that. Party Panel already shares every skill's level with the
-party, so anyone running it is already sending everything needed, and their boosts and drains show up
-without them doing anything. Whatever reaches this plugin is levels rather than the boosts worked out
-from them, so your own settings decide what you see of theirs.
+Hitpoints, prayer and special attack arrive from anyone running the Party plugin that comes with the
+client, whether or not they have this one, since that is what it already shares with the party. The five
+levelled stats come only from party members running Boosted Icon with the setting on.
 
-For a party where nobody is sharing levels already, Boosted Icon shares your own, and anyone else running
-it with the setting on will show up as well.
+What arrives either way is levels rather than the boosts worked out from them, so your own settings
+decide what you see of theirs.
 
 ### Stats
 Every combat stat can be turned on or off on its own, along with special attack, which is not one but

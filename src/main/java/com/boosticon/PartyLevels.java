@@ -24,9 +24,13 @@ class PartyLevels
 		Arrays.fill(real, UNKNOWN);
 	}
 
-	void set(CombatStat stat, int boostedLevel, int realLevel)
+	void setBoosted(CombatStat stat, int boostedLevel)
 	{
 		boosted[stat.ordinal()] = boostedLevel;
+	}
+
+	void setReal(CombatStat stat, int realLevel)
+	{
 		real[stat.ordinal()] = realLevel;
 	}
 

@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Map;
 import javax.inject.Inject;
 import net.runelite.api.Client;
-import net.runelite.api.Experience;
 import net.runelite.api.GameState;
 import net.runelite.api.Player;
 import net.runelite.api.events.GameStateChanged;
@@ -27,6 +26,7 @@ import net.runelite.client.party.events.UserPart;
 import net.runelite.client.party.messages.UserSync;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
+import net.runelite.client.plugins.party.messages.StatusUpdate;
 import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.util.HotkeyListener;
 import net.runelite.client.util.Text;
@@ -60,9 +60,6 @@ public class BoostIconPlugin extends Plugin
 
 	@Inject
 	private WSClient wsClient;
-
-	@Inject
-	private PartyPanelStats partyPanelStats;
 
 	@Inject
 	private KeyManager keyManager;
@@ -118,7 +115,6 @@ public class BoostIconPlugin extends Plugin
 		keyManager.unregisterKeyListener(toggle);
 		hidden = false;
 		wsClient.unregisterMessage(BoostIconStats.class);
-		partyPanelStats.stop();
 		columns.clear();
 		partyLevels.clear();
 		forgetSent();
@@ -183,7 +179,6 @@ public class BoostIconPlugin extends Plugin
 			addColumn(settings, client.getLocalPlayer(), boosted, real);
 		}
 
-		partyPanelStats.listen(settings.partyStats());
 		share(settings, boosted, real);
 
 		if (!settings.partyStats() || !partyService.isInParty())
@@ -296,21 +291,6 @@ public class BoostIconPlugin extends Plugin
 	}
 
 	/**
-	 * One skill of one party member, however it reached us. A skill with no icon here is dropped, and a
-	 * level past 99 is a virtual level, which is a level in name only and not something a stat can be
-	 * boosted above.
-	 */
-	void record(long memberId, int skillOrdinal, int level, int boostedLevel)
-	{
-		CombatStat stat = CombatStat.ofSkill(skillOrdinal);
-
-		if (stat != null)
-		{
-			record(memberId, stat, Math.min(level, Experience.MAX_REAL_LEVEL), boostedLevel);
-		}
-	}
-
-	/**
 	 * One stat of one party member. Levels come from whoever is sharing them and are taken as nothing
 	 * more than numbers, so anything a stat could not be at is dropped rather than drawn.
 	 */
@@ -324,9 +304,62 @@ public class BoostIconPlugin extends Plugin
 			return;
 		}
 
-		clientThread.invoke(() -> partyLevels
-			.computeIfAbsent(memberId, id -> new PartyLevels())
-			.set(stat, boostedLevel, level));
+		clientThread.invoke(() ->
+		{
+			PartyLevels levels = partyLevels.computeIfAbsent(memberId, id -> new PartyLevels());
+
+			levels.setBoosted(stat, boostedLevel);
+			levels.setReal(stat, level);
+		});
+	}
+
+	/**
+	 * What the client's own party plugin already shares, which covers hitpoints, prayer and special
+	 * attack for anyone running it, with or without this plugin. A status carries only the parts of
+	 * itself that changed, so each half of each stat is taken on its own and the rest of what is known
+	 * about that member is left as it was.
+	 */
+	@Subscribe
+	public void onStatusUpdate(StatusUpdate event)
+	{
+		long memberId = event.getMemberId();
+		PartyMember local = partyService.getLocalMember();
+
+		if (!settings.partyStats() || (local != null && local.getMemberId() == memberId))
+		{
+			return;
+		}
+
+		Integer spec = event.getSpecEnergy();
+
+		clientThread.invoke(() ->
+		{
+			PartyLevels levels = partyLevels.computeIfAbsent(memberId, id -> new PartyLevels());
+
+			set(levels, CombatStat.HITPOINTS, event.getHealthCurrent(), event.getHealthMax());
+			set(levels, CombatStat.PRAYER, event.getPrayerCurrent(), event.getPrayerMax());
+
+			// A bar is full at the same amount for everyone, so it is known as soon as the amount is
+			set(levels, CombatStat.SPECIAL, spec, spec == null ? null : CombatStat.FULL_PERCENT);
+		});
+	}
+
+	/**
+	 * One stat out of a status, where either half can be missing because it had not changed. Levels
+	 * come from whoever is sharing them and are taken as nothing more than numbers, so anything a stat
+	 * could not be at is dropped rather than drawn.
+	 */
+	private static void set(PartyLevels levels, CombatStat stat, Integer boostedLevel, Integer realLevel)
+	{
+		if (boostedLevel != null && stat.isPossible(boostedLevel))
+		{
+			levels.setBoosted(stat, boostedLevel);
+		}
+
+		if (realLevel != null && stat.isPossible(realLevel))
+		{
+			levels.setReal(stat, realLevel);
+		}
 	}
 
 	/**

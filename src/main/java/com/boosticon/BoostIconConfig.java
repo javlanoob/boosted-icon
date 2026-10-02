@@ -221,7 +221,7 @@ public interface BoostIconConfig extends Config
 	@ConfigItem(
 		keyName = "partyStats",
 		name = "Party stats",
-		description = "Show your party's boosted and drained stats over their heads. Team mates already sharing their stats with the party, as Party Panel does, need nothing else.",
+		description = "Show your party's boosted and drained stats over their heads. Hitpoints, prayer and special attack come from anyone running the client's Party plugin. The rest needs this plugin on their end too.",
 		position = 18
 	)
 	default boolean partyStats()
